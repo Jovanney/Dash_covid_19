@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "dash-covid"
+version = "0.1.0"
+description = ""
+authors = ["Jovanney <jjsl@cin.ufpe.br>"]
+readme = "README.md"
+packages = [{include = "dash_covid"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+dash = "^2.9.3"
+numpy = "^1.24.3"
+plotly = "^5.14.1"
+dash-core-components = "^2.0.0"
+dash-html-components = "^2.0.0"
+dash-bootstrap-components = "^1.4.1"
+pandas = "^2.0.1"
+ipykernel = "^6.23.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
