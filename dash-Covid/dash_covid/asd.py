@@ -33,6 +33,8 @@ df_data = df_states[df_states["estado"]=="RJ"]
 brazil_states = json.load(open("geojson/brazil_geo.json", "r"))
 
 
+select_columns = {"casosAcumulado": "Casos Acumulados", "casosNovos": "Casos Novos", "obitosAcumulados": "Óbitos Totais", "obitosNovos": "Óbitos por Dia"}
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
@@ -64,20 +66,81 @@ fig2.update_layout(
 
 app.layout = dbc.Container(   
     dbc.Row([
-        html.Div([
-            html.Img(id="logo", src=app.get_asset_url("logo_dark.png"), height = 50),
-            html.H5("Evolução COVID-19"),
-            dbc.Button("BRASIL", color="primary", id="location-button", size="lg")
-        ]),
         dbc.Col([
-            dcc.Graph(id="line-graph", figure=fig2)
-        ]),
-        dbc.Col([
-            dcc.Graph(id = "choropleth-map", figure = fig)
-        ])
-    ])
+            html.Div([
+                html.Img(id="logo", src=app.get_asset_url("logo_dark.png"), height = 50),
+                html.H5("Evolução COVID-19"),
+                dbc.Button("BRASIL", color="red", id="location-button", size="lg")],
+                style={}),
+                html.P("Informe a data na qual deseja obter informações:", style={"margin-top": "40px"}),
+                html.Div(id="div-test", children = [
+                    dcc.DatePickerSingle(
+                        id="date-picker",
+                        min_date_allowed = df_brasil["data"].min(),
+                        max_date_allowed = df_brasil["data"].max(),
+                        initial_visible_month = df_brasil["data"].min(),
+                        date = df_brasil["data"].max(),
+                        display_format = "MMM D, YYYY",
+                        style = {"border": "0px solid black"}
+                    )
+                ]),
 
-)
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.Span("Casos recuperados"),
+                                html.H3(style={"color": "#adfc92"}, id="casos-recuperados-text"),
+                                html.Span("Em acompanhamento"),
+                                html.H5(style={"color": "#adfc92"}, id="casos-acompanhamento-text"),
+                            ]),
+                        ], color = "light", outline= True, style={"margin-top": "10px", "box-shadow": "0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 4px 20px 0 rgba(0, 0, 0, 0.19)", "color": "#FFFFFF"}),
+                    ], md=4),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.Span("Casos Confirmado Totais"),
+                                html.H3(style={"color": "#389fd6"}, id="casos-confirmados-text"),
+                                html.Span("Novos Casos na Data"),
+                                html.H5(style={"color": "#adfc92"}, id="novos-casos-text"),
+                            ]),
+                        ], color = "light", outline= True, style={"margin-top": "10px", "box-shadow": "0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 4px 20px 0 rgba(0, 0, 0, 0.19)", "color": "#FFFFFF"}),
+                    ], md=4),
+                    dbc.Col([
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.Span("Óbitos Confirmados"),
+                                html.H3(style={"color": "#df2935"}, id="obitos-text"),
+                                html.Span("Óbitos na Data"),
+                                html.H5(id="obitos-na-data-text"),
+                            ]),
+                        ], color = "light", outline= True, style={"margin-top": "10px", "box-shadow": "0 4px 4px 0 rgba(0, 0, 0, 0.15), 0 4px 20px 0 rgba(0, 0, 0, 0.19)", "color": "#FFFFFF"}),
+                    ], md=4),
+                            
+                ]),
+                html.Div([
+                html.P("Selecione que tipo de dados deseja visualizar:", style={"margin-top": "40px"}),
+                dcc.Dropdown(id="location-local",
+                            options= [{"label": j, "value": i} for i, j in select_columns.items()],
+                            value="casosNovos",
+                            style={"margin-top": "10px"},
+                            ),
+
+                dcc.Graph(id="line-graph", figure=fig2)
+                ]),
+
+
+        ], md = 5, style = {"padding": "25px", "background-color": "#242424"}),
+        dbc.Col([
+            dcc.Loading(id="loading-1", type= "default",
+            children=[
+                dcc.Graph(id="choropleth-map", figure = fig, style = {"height": "100vh", "margin-right": "10px"})
+                ]        
+            ),
+
+        ], md = 7)
+    ])
+,fluid = True)
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8190)
