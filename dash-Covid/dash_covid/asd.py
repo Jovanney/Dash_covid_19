@@ -33,7 +33,7 @@ df_data = df_states[df_states["estado"]=="RJ"]
 brazil_states = json.load(open("geojson/brazil_geo.json", "r"))
 
 
-select_columns = {"casosAcumulado": "Casos Acumulados", "casosNovos": "Casos Novos", "obitosAcumulados": "Óbitos Totais", "obitosNovos": "Óbitos por Dia"}
+select_columns = {"casosAcumulado": "Casos Acumulados", "casosNovos": "Casos Novos", "obitosAcumulado": "Óbitos Totais", "obitosNovos": "Óbitos por Dia"}
 
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
@@ -62,7 +62,6 @@ fig2.update_layout(
     autosize= True,
     margin=dict(l=10, r=10, t=10, b=10)
 )
-
 
 app.layout = dbc.Container(   
     dbc.Row([
@@ -120,7 +119,7 @@ app.layout = dbc.Container(
                 ]),
                 html.Div([
                 html.P("Selecione que tipo de dados deseja visualizar:", style={"margin-top": "40px"}),
-                dcc.Dropdown(id="location-local",
+                dcc.Dropdown(id="location-dropdown",
                             options= [{"label": j, "value": i} for i, j in select_columns.items()],
                             value="casosNovos",
                             style={"margin-top": "10px"},
@@ -141,6 +140,66 @@ app.layout = dbc.Container(
         ], md = 7)
     ])
 ,fluid = True)
+
+@app.callback([
+    Output("casos-recuperados-text", "children"),
+    Output("casos-acompanhamento-text", "children"),
+    Output("casos-confirmados-text", "children"),
+    Output("novos-casos-text", "children"),
+    Output("obitos-text", "children"),
+    Output("obitos-na-data-text", "children"),
+    ],
+    [
+    Input("date-picker", "date"), Input("location-button", "children")
+    ])
+def display_status(date, location):
+    if location == "BRASIL":
+        df_data_on_date = df_brasil[df_brasil["data"] == date]
+    else:
+        df_data_on_date = df_states[(df_states["estado"] == location) & df_states["data"] == date]
+      
+    recuperados_novos = "-" if df_data_on_date["Recuperadosnovos"].isna().values[0] else f'{int(df_data_on_date["Recuperadosnovos"].values[0]):,}'.replace(",", ".") 
+    acompanhamentos_novos = "-" if df_data_on_date["emAcompanhamentoNovos"].isna().values[0]  else f'{int(df_data_on_date["emAcompanhamentoNovos"].values[0]):,}'.replace(",", ".") 
+    casos_acumulados = "-" if df_data_on_date["casosAcumulado"].isna().values[0]  else f'{int(df_data_on_date["casosAcumulado"].values[0]):,}'.replace(",", ".") 
+    casos_novos = "-" if df_data_on_date["casosNovos"].isna().values[0]  else f'{int(df_data_on_date["casosNovos"].values[0]):,}'.replace(",", ".") 
+    obitos_acumulado = "-" if df_data_on_date["obitosAcumulado"].isna().values[0]  else f'{int(df_data_on_date["obitosAcumulado"].values[0]):,}'.replace(",", ".") 
+    obitos_novos = "-" if df_data_on_date["obitosNovos"].isna().values[0]  else f'{int(df_data_on_date["obitosNovos"].values[0]):,}'.replace(",", ".") 
+    return (
+            recuperados_novos, 
+            acompanhamentos_novos, 
+            casos_acumulados, 
+            casos_novos, 
+            obitos_acumulado, 
+            obitos_novos,
+            )
+
+@app.callback(
+    Output("line-graph", "figure"), 
+    [
+        Input("location-dropdown", "value"), Input("location-button", "children"),
+    ]
+    )
+def plot_line_graph(plot_type, location):
+    if location == "BRASIL":
+        df_data_on_location = df_brasil.copy()
+    else:
+        df_data_on_location = df_states[df_states["estado"] == location]
+
+    bar_plots = ["casosNovos", "obitosNovos"]
+
+    fig2 = go.Figure(layout={"template": "plotly_dark"})
+
+    if plot_type in bar_plots:
+        fig2.add_trace(go.Bar(x=df_data_on_location["data"], y=df_data_on_location[plot_type]))
+    else:
+        fig2.add_trace(go.Scatter(x=df_data_on_location["data"], y=df_data_on_location[plot_type]))
+    fig2.update_layout(
+        paper_bgcolor="#242424",
+        plot_bgcolor="#242424",
+        autosize=True,
+        margin=dict(l=10, r=10, b=10, t=10),
+        )
+    return fig2
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8190)
