@@ -200,6 +200,19 @@ def plot_line_graph(plot_type, location):
         margin=dict(l=10, r=10, b=10, t=10),
         )
     return fig2
+@app.callback(
+    Output("location-button", "children"),
+    [Input("choropleth-map", "clickData"), Input("location-button", "n_clicks")]
+)
+def update_location(click_data, n_clicks):
+    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+    if click_data is not None and changed_id != "location-button.n_clicks":
+        state = click_data["points"][0]["location"]
+        return "{}".format(state)
+    
+    else:
+        return "BRASIL"
+    
 
 if __name__ == "__main__":
     app.run_server(debug=True, port=8190)
